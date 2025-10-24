@@ -1,0 +1,244 @@
+openapi: 3.0.1
+info:
+  title: Public Promo MCP API
+  description: Public endpoints for retrieving promotion data without authentication.
+  version: 1.0.0
+servers:
+  - url: https://mcpcounpon.onrender.com
+    description: Production server
+paths:
+  /api/mcp/jutuike/public_promo_list:
+    get:
+      summary: List promotions
+      operationId: listPublicPromotions
+      tags:
+        - Promotions
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityListResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/mcp/jutuike/public_promo_search:
+    get:
+      summary: Search promotions with optional filters
+      operationId: searchPublicPromotions
+      tags:
+        - Promotions
+      parameters:
+        - name: category
+          in: query
+          description: Filter activities by category keyword (fuzzy match)
+          required: false
+          schema:
+            type: string
+        - name: activityType
+          in: query
+          description: Filter activities by exact activity type
+          required: false
+          schema:
+            type: string
+        - name: keyword
+          in: query
+          description: Filter activities by keyword in name or description
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitySearchResponse'
+        '404':
+          description: No matching activities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/mcp/jutuike/get_promo:
+    get:
+      summary: Get promotion detail
+      operationId: getPromotionDetail
+      tags:
+        - Promotions
+      parameters:
+        - name: actId
+          in: query
+          description: 活动ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromotionDetailResponse'
+        '400':
+          description: Missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Activity not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Upstream service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    Activity:
+      type: object
+      required:
+        - activityType
+        - activityName
+        - actId
+        - category
+        - desc
+      properties:
+        activityType:
+          type: string
+          description: Unique activity type identifier 
+        activityName:
+          type: string
+          description: Human readable promotion name
+        actId:
+          type: string
+          description: 活动ID
+        category:
+          type: string
+          description: Local classification label
+        desc:
+          type: string
+          description: Brief description of promotion
+    MiniAppLink:
+      type: object
+      description: Raw mini program launch parameters returned 
+      additionalProperties: true
+    ActivityWithLinks:
+      allOf:
+        - $ref: '#/components/schemas/Activity'
+        - type: object
+          properties:
+            link:
+              type: string
+              description: H5 URL for the promotion, empty when unavailable
+            miniAppLink:
+              $ref: '#/components/schemas/MiniAppLink'
+    ActivityListResponse:
+      type: object
+      required:
+        - code
+        - data
+      properties:
+        code:
+          type: integer
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityWithLinks'
+    ActivitySearchResponse:
+      type: object
+      required:
+        - code
+        - data
+        - filtersApplied
+      properties:
+        code:
+          type: integer
+          example: 200
+        filtersApplied:
+          type: object
+          description: Echo of filters that were applied to the search
+          additionalProperties: false
+          properties:
+            category:
+              type: string
+              nullable: true
+            activityType:
+              type: string
+              nullable: true
+            keyword:
+              type: string
+              nullable: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityWithLinks'
+    PromotionDetailResponse:
+      type: object
+      required:
+        - code
+        - data
+      properties:
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          required:
+            - activity
+            - realLinks
+          properties:
+            activity:
+              $ref: '#/components/schemas/Activity'
+            realLinks:
+              type: object
+              required:
+                - promoH5
+                - deeplink
+                - miniApp
+              properties:
+                promoH5:
+                  type: string
+                  description: H5 URL for the promotion
+                deeplink:
+                  type: string
+                  description: Deep link that can be used inside partner apps
+                miniApp:
+                  $ref: '#/components/schemas/MiniAppLink'
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - msg
+      properties:
+        code:
+          type: integer
+          example: 500
+        msg:
+          type: string
+          example: Server Error
+        detail:
+          type: string
+          description: Optional upstream error detail
