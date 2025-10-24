@@ -4,7 +4,7 @@
 
 ## 目录结构
 ```
-mcp-backend-only/
+/
 ├─ README.md              # 本说明
 ├─ package.json           # npm 依赖清单
 └─ src/
@@ -13,7 +13,7 @@ mcp-backend-only/
 
 ## 本地快速启动
 ```bash
-cd mcp-backend-only
+
 npm install
 node src/app.js
 ```
@@ -34,3 +34,4 @@ MCP Public Promo Server is running on http://localhost:8000
 
 ## 对外开放
 将该目录部署到任何支持 Node.js 的平台（如 Render、Railway、VPS）。部署完成后，将生成的域名提供给调用方，并让其访问 `https://域名/.well-known/ai-plugin.json` 与 `https://域名/openapi.yaml` 即可按 MCP 标准对接。
+
